@@ -41,7 +41,7 @@
 
 #include <LiquidCrystal.h>
 
-int seconds = 10;
+int seconds = 9;
 
 LiquidCrystal lcd(12, 11, 7, 6, 5, 4);
 #define bvermelho A0
@@ -68,21 +68,22 @@ int dif=1;
 String s="";
 String respusu="";
 int perg;
-int tempo = 10000;
 int x = 0;
+int vidas = 1;
 
 
 String perguntas[] = {
-  "1","3<5?","V",
-  "1","5>4?","V",
-  "2","5x5=10?","F",
-  "2","2x3=6?","V",
-  "3","Sol>Terra","V",
-  "3","Pedra>Tesoura","V",
-  "4","Leao>Sol","F",
-  "4","Full dima>Couro","V",
+  "1","Baleias sao repteis?","F",
+  "1","Latvia significa Letonia?","V",
+  "2","Um byte sao 8 bits?","V",
+  "2","Este LCD tem RGB?","F",
+  "3","O chamado da baleia percorre mais que 1000m?","V",
+  "3","AMD compete com a Intel?","V",
+  "4","O Facebook foi criado em 1998?","F",
+  "4","Socrates eh um personagem ficticio?","F",
   "5","Peixes voam?","F",
-  "5","luz tem massa?","F",  
+  "5","Luz tem massa?","F",
+  "6","Gostou do jogo?","V",
 };
 
 
@@ -92,9 +93,8 @@ void setup()
 {
   
   Serial.begin(9600);
-  lcd.begin(16, 2); // Set up the number of columns and rows on the LCD.
-  // Print a message to the LCD.
-  attachInterrupt(digitalPinToInterrupt(2), jogoluz,FALLING);
+  lcd.begin(16, 2); // Set up do LCD 16 x 2
+  attachInterrupt(digitalPinToInterrupt(2), jogoluz,FALLING); // Botao de interrupcao
   pinMode(bvermelho, INPUT_PULLUP); // Botao para luz vermelha
   pinMode(bverde, INPUT_PULLUP); // Botao para luz verde
   pinMode(2, INPUT_PULLUP); // Botao de Reset / Inicio
@@ -102,54 +102,118 @@ void setup()
   pinMode(10, OUTPUT); // BUZZER
   pinMode(9, OUTPUT); // Luz vermelha
   pinMode(8, OUTPUT); // Luz verde
-  randomSeed(analogRead(A0));
+  randomSeed(analogRead(2));
   
 }
 
-void melodia_derrota(){
+void scrollTexto(String pergunta) {
+  //Recebe uma String, que se necessario ativara um scroll
   lcd.clear();
-  lcd.print("Voce perdeu");
-  tone(buzzer, siNota, 500);  // Toca Fá por 500ms
+  int len = pergunta.length();
+  
+  // Se a pergunta couber no display, apenas mostre
+  if (len <= 16) {
+    lcd.print(pergunta);
+    delay(1000); 
+  } else {
+    //Scroll da pergunta, iterando sobre a len
+    for (int i = 0; i < len - 15; i++) {
+      lcd.setCursor(0,0);
+      lcd.print(pergunta.substring(i, i + 16)); 
+      delay(300); 
+    } 
+    delay(700);
+}
+}
+//Diversas melodias com uso do RESET -----------
+void melodia_derrota(){
+  tone(buzzer, siNota, 500);
   delay(500); 
-  tone(buzzer, solNota, 500);  // Toca Mi por 500ms
+  tone(buzzer, solNota, 500);
   delay(500);	
-  tone(buzzer, miNota, 500);  // Toca Ré por 500ms
+  tone(buzzer, miNota, 500);
   delay(500);
-  tone(buzzer, doNota, 500);  // Toca Dó por 500ms
+  tone(buzzer, doNota, 500);
   delay(500); 
   noTone(10);
-  lcd.clear();
   RESET;
 }
-
-void melodia_correto(){
-  lcd.clear();
-  lcd.print("Correto");
-  tone(10, doNota, 500);  // Toca Dó por 500ms
-  delay(500);                 // Pausa por 500ms
-  tone(10, miNota, 500);  // Toca Ré por 500ms
-  delay(500);
-  noTone(10);
-  lcd.clear();
+void melodia_errou(){
+  tone(buzzer, siNota, 500);
+  delay(500); 
+  tone(buzzer, solNota, 500);
+  delay(500);	
+  RESET;
 }
+void melodia_correto(){
+  tone(10, doNota, 300); 
+  delay(300);
+  tone(10, miNota, 200);  
+  delay(200);
+  noTone(10);
+}
+void som_tempo(){
+  tone(10, doNota, 200);  
+  delay(100);                
+  tone(10, siNota, 100);  
+  delay(100);
+  noTone(10);
+}
+void som_tempo_esgotado(){
+  tone(10, siNota, 200);  
+  delay(100);                
+  tone(10, doNota, 100);  
+  delay(100);
+  noTone(10);
+}
+
 
 void melodia_vitoria(){
-  tone(10, doNota, 500);  // Toca Dó por 500ms
-  delay(500);                 // Pausa por 500ms
-  tone(10, miNota, 500);  // Toca Ré por 500ms
+  tone(10, doNota, 500);
+  delay(500);            
+  tone(10, miNota, 500);
   delay(500);
-  tone(10, solNota, 500);  // Toca Mi por 500ms
+  tone(10, solNota, 500);
   delay(500);
-  tone(10, siNota, 500);  // Toca Fá por 500ms
+  tone(10, siNota, 500); 
   delay(500);
   noTone(10);
 }
-
-void pisca(int pin){
-	digitalWrite(pin, HIGH);
-  	delay(500); 
-  	digitalWrite(pin, LOW);
+void melodia_vitoria2(){
+  tone(10, doNota, 500);
+  delay(500);            
+  tone(10, doNota, 200);
+  delay(200);
+  tone(10, reNota, 500);
   delay(500);
+  tone(10, solNota, 500); 
+  delay(500);
+  tone(10, faNota, 200); 
+  delay(200);
+  tone(10, faNota, 200); 
+  delay(200);
+  tone(10, faNota, 200); 
+  delay(200);
+  noTone(10);
+}
+
+// ----------  Fim das melodias
+
+// Funcoes para facilitar a escrita e leitura do codigo -------
+void pisca(int pin){
+  //Recebe o pin de um LED, liga ele e faz um som respectivo
+	digitalWrite(pin, HIGH);
+  if(pin == 1){
+  	tone(10, tom_verde, 300);
+    
+  }
+  else{
+  	tone(10, tom_vermelho, 300);
+  }
+  delay(300); 
+  noTone(10);
+  digitalWrite(pin, LOW);
+  delay(300);
 }
 
 int cria_sequencia(){
@@ -157,6 +221,7 @@ int cria_sequencia(){
 }
 
 void mostrar_luzes(){
+  //Mostra a combinacao de luzes a ser seguida
   for(int i = 0; i <5; i++){
     if(seqluz[i] == 1){
     	pisca(verde);
@@ -166,8 +231,8 @@ void mostrar_luzes(){
     }
   }
 }
-
-void mensagem_luz(){
+void mensagem_luz(){ 
+  //Escreve a mensagem a ser repetida no loop
   lcd.clear();
   lcd.print("Teste de");
   lcd.setCursor(0,1);
@@ -184,30 +249,31 @@ void mensagem_luz(){
   lcd.print("para iniciar");
   delay(1500);
   lcd.clear();
-  
-  
 }
 
 void mensagem_pergunta(){
+  //Escreve a mensagem a ser repetida no loop
   lcd.clear();
   lcd.print("Teste de");
   lcd.setCursor(0,1);
   lcd.print("Conhecimento");
-  delay(1500);
+  delay(700);
   lcd.clear();
   lcd.print("Responda com");
   lcd.setCursor(0,1);
   lcd.print("V / F");
-  delay(1500);
+  delay(700);
   lcd.clear();
-  lcd.print("Aperte o botao");
+  lcd.print("Segure o botao");
   lcd.setCursor(0,1);
-  lcd.print("Verde para seguir");
+  lcd.print("Verde p/ seguir");
   delay(1500);
   lcd.clear();
 }
 
 int escolhepergunta(int dif){
+  // Recebe a quantidade de perguntas respondidas e retorna uma
+  // posicao no array com a pergunta aleatoriamente escolhida
   if(dif == 1){
     return pospergunta=3*random(0,2);
   }
@@ -223,135 +289,257 @@ int escolhepergunta(int dif){
   if(dif == 5){
     return pospergunta=3*random(8,10);
   }
+  if(dif == 6){
+  	return pospergunta=3*random(10,11);
+  }
 }
 
-void apresentapergunta(int perg){
-  lcd.clear();
-  lcd.print("Pergunta de");
-  lcd.setCursor(0,1);
-  lcd.print("Dificuldade:");
-  lcd.setCursor(12,1);
-  lcd.print(dif);
-  delay(2000);
-}
 
 void mostrapergunta(int perg){
-  
+  // Recebe a posicao de uma pergunta e a mostra
+  lcd.clear();
+  lcd.print("Pergunta ");
+  lcd.setCursor(9,0);
+  lcd.print(dif);
+  lcd.setCursor(11,0);
+  lcd.print(" / 5");
+  delay(1000);
   lcd.clear();
   String s = perguntas[perg+1];
-  lcd.print(s);
-  lcd.setCursor(0,1);
+  lcd.setCursor(0,0);
+  scrollTexto(s);
+  delay(1500);
+  lcd.clear();
 }
 
-void respondepergunta(int perg, String respusu){
-  if(respusu == perguntas[perg+2]){
-    Serial.println(dif);
-    
-    tempo = 10000;
-    seconds = 10;
-    perg = escolhepergunta(dif);
-  } 
-  else{
-    melodia_derrota();
+void mostra_tempo(int tempo){
+  // Recebe e mostra o tempo que o usuario tem
+  //caso tiver metade do tempo toca um som
+  lcd.clear(); 
+  lcd.setCursor(3,0);
+  lcd.print("Tempo: ");
+  lcd.setCursor(12, 0);
+  lcd.print(tempo);
+  lcd.setCursor(2,1);
+  lcd.print("Sim  ou");
+  lcd.setCursor(12,1);
+  lcd.print("Nao");
+   if(tempo <6){
+     som_tempo();
+        }
+}
+void respondepergunta(int perg, String respusu) {
+  // Recebe a posicao de uma pergunta e a resposta do usuario
+  // e compara as respostas para verificar o resultado
+  lcd.clear();
+  if (perguntas[perg + 2].equals("V")) {
+ 		//Mostram a resposta correta da pergunta
+    lcd.setCursor(1, 1);
+    lcd.print("*Sim  ou");
+    lcd.setCursor(12, 1);
+    lcd.print("Nao");
+    delay(500);
+  } else {
+    lcd.setCursor(2, 1);
+    lcd.print("Sim  ou");
+    lcd.setCursor(11, 1);
+    lcd.print("*Nao");
+    delay(500);
+  }
+  
+  // Verificacao da resposta com base na posicao do array
+  if (respusu.equals(perguntas[perg + 2])) {
+    lcd.setCursor(0, 0);
+    lcd.print("Resposta Correta!");
+    melodia_correto();
+    if(dif == 6){
+      //Maneja o caso de vitoria do usuario
+      lcd.clear();
+      lcd.print("Voce ganhou!!");
+      delay(500);
+      melodia_vitoria2();
+    }
+
+  } else { 
+    //Maneja resposta errada e toca o seu som
+    delay(1000);
+    lcd.clear();
+    lcd.print("Voce errou!");
+    melodia_errou();
+    lcd.setCursor(0, 1);
+    lcd.print("Fim de Jogo!");
+    delay(1000);
+    RESET;  // Reinicia o jogo
   }
 }
+
   
 void jogoluz(){
-	for(int i= 0; i<5;i++){
-  	seqluz[i] = cria_sequencia();
-  }
-  Serial.println("PRENDIO");
-  for(int i = 0; i <5; i++){
-  	Serial.println(seqluz[i]);
-  }
+  //Incrementa um contador para manejar o desistir
   contador++;
   
+	for(int i= 0; i<2;i++){
+  	seqluz[i] = cria_sequencia();
+  }
+  if(contador > 1){
+    //Desiste (reseta) caso o contador for incrementado 2x
+    // e toca o seu som respectivo
+    lcd.clear();
+    lcd.print("Voce desistiu!");
+    delay(1000);
+    tone(10, solNota, 500);
+    delay(500);
+    tone(10, siNota, 500); 
+    noTone(10);
+    delay(1000);
+    RESET;
+  }
 }
 
 void check_luz(int pos, int luz){
-  Serial.println(pos);
-  Serial.println(luz);
-  if(luz == 1){
-    	pisca(verde);
-    }
-    if(luz == 2){
-    	pisca(vermelho);
-    }
+  // Recebe a quantidade de inputs do usuario e o input atual
+  // e verifica se a resposta esta correta, utilizando o array 
+  // da sequencia gerada aleatoriamente
   if(seqluz[pos] != luz){
+    //Caso o usuario errar, toca a melodia de derrota
+    // e mostra o quanto o usuario acertou
+    lcd.clear();
+    scrollTexto("Sequencia errada");
+    lcd.setCursor(0,1);
+    lcd.print(bpressionado+1);
+    lcd.setCursor(3, 1);
+    lcd.print("de 10");
+    lcd.setCursor(7, 1);
     melodia_derrota();
+  }
+  else{
+    //Faz a respectiva luz piscar e mostra os acertos do usuario
+  	if(luz == 1){
+      lcd.setCursor(0,0);
+      lcd.print("Sequencia:");
+      lcd.setCursor(11,0);
+      lcd.print(bpressionado+1);
+      lcd.setCursor(0,1);
+      lcd.print("Correto");
+      pisca(verde);
+      }
+    if(luz == 2){
+      lcd.setCursor(0,0);
+      lcd.print("Sequencia:");
+      lcd.setCursor(11,0);
+      lcd.print(bpressionado+1);
+      lcd.setCursor(0,1);
+      lcd.print("Correto");
+      pisca(vermelho);
+    }
   }
 }
 
-
-
-
 void loop()
 {
+  //Chama a mensagem e limpa caso terminar de mostrar a mensagem
   mensagem_luz();
   lcd.clear();
-  
-  
   if(contador == 1){
-  	mostrar_luzes();
-    while(bpressionado <=4){
-    
-      if(digitalRead(bvermelho) == LOW){
-          check_luz(bpressionado, 2);
-          bpressionado++;
+    //Quando o botao (2) ser pressionado mostra a sequencia gerada
+    mostrar_luzes();
+    while(bpressionado <=1){
+      //Mantem o codigo nessa parte ate o usuario apertar pelo
+      // menos 1x vez
+    if(digitalRead(bvermelho) == LOW){
+      //Verifica e incrementa o input e seu contador
+      check_luz(bpressionado, 2);
+      bpressionado++;
       }
     else if(digitalRead(bverde) == LOW){
-          check_luz(bpressionado,1);
-        bpressionado++;
+      check_luz(bpressionado,1);
+      bpressionado++;
        }
     }
+    //Toca musica de vitoria da primeira fase
     melodia_vitoria();
-   
-      while(x==0){
-        
-        mensagem_pergunta();
-        
-        if(digitalRead(bverde)==LOW){
-          x=1;
-          apresentapergunta(dif);
-          }
-        
-      }
-      perg = escolhepergunta(dif);
-      while(dif <=5 && tempo >0){
-        
-       
-        
-  		mostrapergunta(perg);
-        lcd.print(seconds);
-        delay(1000);
-        seconds--;
-        tempo -= 1000;
-        if(tempo == 0){
-        	melodia_derrota();
-        }	
-        
-        
-        
-        if(digitalRead(bvermelho) == LOW){
-          pisca(vermelho);
-          respondepergunta(perg,"F");
-          dif++;
-          perg = escolhepergunta(dif);
-          Serial.println(perg);
-          apresentapergunta(dif);
-          
-      } else if(digitalRead(bverde) == LOW){
-          pisca(verde);
-          respondepergunta(perg,"V");
-          dif++;
-          perg = escolhepergunta(dif);
-          Serial.println(perg);
-          apresentapergunta(dif);
-          
-       
+    while(x==0){
+      //Mantem o codigo no loop ate o usuario segurar o botao
+      mensagem_pergunta();
+      if(digitalRead(bverde)==LOW){
+        // Incrementa o contador e sai do loop while
+        x=1;
       }
     }
+    //Escolhe e mostra a primeira pergunta
+    perg = escolhepergunta(dif);
+    mostrapergunta(perg);
+    while(dif <=6 && seconds >0){ 
+      //Mantem o codigo no loop while e mostra/atualiza o tempo
+      mostra_tempo(seconds);
+      delay(1200);
+      seconds--;
+      if(seconds == 0 && vidas == 1){
+        //Maneja o caso do usuario pular uma questao com uso
+        // de um contador de vidas e um som respectivo
+        seconds = 9;
+        lcd.clear();
+        lcd.print("Pergunta pulada");
+        delay(600);
+        som_tempo_esgotado();
+        vidas--;
+        perg = escolhepergunta(dif);
+        mostrapergunta(perg);
+        }
+      if(seconds == 0 && vidas == 0){
+        //Maneja o caso do usuario esgotar o tempo e a vida
+        lcd.clear();
+        lcd.print("Tempo esgotado!");
+        melodia_derrota();
+        }	
+      if(digitalRead(bvermelho) == LOW){
+        //Pisca a resposta F e chama a funcao de resposta
+        // Tambem atualiza contadores e variaveis 
+        pisca(vermelho);
+        respondepergunta(perg,"F");
+        dif++;
+        seconds = 9;
+        if(dif == 6){
+          //Maneja o caso da pergunta final que tem local fixo
+          lcd.clear();
+          lcd.print("Pergunta Final!");
+          delay(1000);
+          lcd.clear();
+          perg = escolhepergunta(dif);
+          scrollTexto(perguntas[perg+1]);
+        }
+        else if(dif <6){
+          //Maneja os casos das perguntas normais (1 a 5)
+        perg = escolhepergunta(dif);
+     	mostrapergunta(perg);
+          seconds = 9;
+        }
+      } 
+      else if(digitalRead(bverde) == LOW){
+        // Maneja a resposta V e chama a funcao de resposta
+        // Tambem atualiza contadores e variaveis
+        pisca(verde);
+        respondepergunta(perg,"V");
+        dif++;
+        seconds = 9;
+        if(dif == 6){
+          //Maneja o caso da pergunta final
+          lcd.clear();
+          lcd.print("Pergunta Final!");
+          delay(1000);
+          lcd.clear();
+          perg = escolhepergunta(dif);
+          scrollTexto(perguntas[perg+1]);
+          lcd.clear();
+        }
+        else if(dif <6){
+          //Maneja os casos das perguntas normais (1 a 5)
+        perg = escolhepergunta(dif);
+      	mostrapergunta(perg);
+        }
+      }
+  
+    }
   }
-   
 }
 
