@@ -77,13 +77,14 @@ String perguntas[] = {
   "1","Latvia significa Letonia?","V",
   "2","Um byte sao 8 bits?","V",
   "2","Este LCD tem RGB?","F",
-  "3","O chamado da baleia percorre mais que 1000m?","V",
+  "3","Orcas sao golfinhos?","V",
   "3","AMD compete com a Intel?","V",
   "4","Dentes sao ossos?","F",
   "4","Buzzer emite som?","V",
-  "5","Filipinas eh o maior arquipelago do planeta?","F",
+  "5","Polvos tem 3 coracoes?","V",
   "5","Luz tem massa?","F",
-  "6","Dom Quixote eh o livro mais vendido no mundo?","F",
+  "6","3 eh um numero primo?","V",
+  "7","3>(5**0.2)","V"
 };
 
 
@@ -143,7 +144,6 @@ void melodia_errou(){
   delay(500); 
   tone(buzzer, solNota, 500);
   delay(500);	
-  RESET;
 }
 void melodia_correto(){
   tone(10, doNota, 300); 
@@ -210,7 +210,7 @@ void pisca(int pin){
   else{
   	tone(10, tom_vermelho, 300);
   }
-  delay(300); 
+  delay(350); 
   noTone(10);
   digitalWrite(pin, LOW);
   delay(400);
@@ -221,6 +221,10 @@ int cria_sequencia(){
 }
 
 void mostrar_luzes(){
+  lcd.setCursor(0,0);
+  lcd.print("Memorize a ");
+  lcd.setCursor(0,1);
+  lcd.print("sequencia!");
   //Mostra a combinacao de luzes a ser seguida
   for(int i = 0; i <=9; i++){
     if(seqluz[i] == 1){
@@ -241,11 +245,6 @@ void mensagem_luz(){
   lcd.print("Teste de");
   lcd.setCursor(0,1);
   lcd.print("Memoria");
-  delay(1000);
-  lcd.clear();
-  lcd.print("Memorize a");
-  lcd.setCursor(0,1);
-  lcd.print("Sequencia");
   delay(1000);
   lcd.clear();
   lcd.print("Aperte o botao");
@@ -319,7 +318,6 @@ void mostrapergunta(int perg){
 void mostra_tempo(int tempo){
   // Recebe e mostra o tempo que o usuario tem
   //caso tiver metade do tempo toca um som
-  lcd.clear(); 
   lcd.setCursor(3,0);
   lcd.print("Tempo: ");
   lcd.setCursor(12, 0);
@@ -342,13 +340,13 @@ void respondepergunta(int perg, String respusu) {
     lcd.print("*Sim  ou");
     lcd.setCursor(12, 1);
     lcd.print("Nao");
-    delay(700);
+    delay(500);
   } else {
     lcd.setCursor(2, 1);
     lcd.print("Sim  ou");
     lcd.setCursor(11, 1);
     lcd.print("*Nao");
-    delay(700);
+    delay(500);
   }
   
   // Verificacao da resposta com base na posicao do array
@@ -366,10 +364,11 @@ void respondepergunta(int perg, String respusu) {
 
   } else { 
     //Maneja resposta errada e toca o seu som
-    delay(1000);
-    lcd.clear();
+    lcd.setCursor(0,0);
     lcd.print("Voce errou!");
     melodia_errou();
+    delay(1000);
+    lcd.clear();
     lcd.setCursor(0, 1);
     lcd.print("Fim de Jogo!");
     delay(1000);
@@ -380,9 +379,11 @@ void respondepergunta(int perg, String respusu) {
   
 void jogoluz(){
   //Incrementa um contador para manejar o desistir
+  // e iniciar o jogo das luzes
   contador++;
 	for(int i= 0; i<=9;i++){
   	seqluz[i] = cria_sequencia();
+      Serial.println(seqluz[i]);
   }
 }
 
@@ -427,6 +428,7 @@ void check_luz(int pos, int luz){
 
 void loop()
 {
+  int uperg;
   if(contador == 2){
     //Desiste (reseta) caso o contador for incrementado 2x
     // e toca o seu som respectivo
@@ -437,8 +439,10 @@ void loop()
     delay(200);
     tone(10, doNota, 200);
     delay(200);
-    tone(10, siNota, 200); 
-    noTone(10);
+    tone(10, solNota, 200);
+    delay(200);
+    tone(10, solNota, 200);
+    delay(200);
     delay(1000);
     RESET;
   }
@@ -449,7 +453,7 @@ void loop()
     //Quando o botao (2) ser pressionado mostra a sequencia gerada
     mostrar_luzes();
     delay(1000);
-    while(bpressionado <=10 && contador ==1){
+    while(bpressionado <=9 && contador ==1){
       //Mantem o codigo nessa parte ate o usuario apertar pelo
       // menos 1x vez
     if(digitalRead(bvermelho) == LOW){
@@ -462,9 +466,12 @@ void loop()
       bpressionado++;
        }
     }
-    //Toca musica de vitoria da primeira fase
-    melodia_vitoria();
+    if(contador == 1){
+      //Toca musica de vitoria da primeira fase
+      melodia_vitoria();
+    }
     while(x==0 && contador == 1){
+      
       //Mantem o codigo no loop ate o usuario segurar o botao
       mensagem_pergunta();
       if(digitalRead(bverde)==LOW){
@@ -472,10 +479,15 @@ void loop()
         x=1;
       }
     }
-    //Escolhe e mostra a primeira pergunta
-    perg = escolhepergunta(dif);
-    mostrapergunta(perg);
+    if(contador ==1){
+      //Escolhe e mostra a primeira pergunta
+      //checkando se o usuario nao desistiu
+      perg = escolhepergunta(dif);
+      mostrapergunta(perg);
+    }
     while(dif <=6 && seconds >0 && contador == 1){ 
+      
+      
       //Mantem o codigo no loop while e mostra/atualiza o tempo
       mostra_tempo(seconds);
       delay(1200);
@@ -489,7 +501,7 @@ void loop()
         delay(600);
         som_tempo_esgotado();
         vidas--;
-        perg = escolhepergunta(dif);
+        perg = 33;
         mostrapergunta(perg);
         }
       if(seconds == 0 && vidas == 0){
