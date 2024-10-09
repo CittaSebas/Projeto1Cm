@@ -73,8 +73,7 @@ O projeto atingiu os objetivos propostos, criando um jogo funcional que testa a 
 
 Dificuldades Encontradas:
 
-Código não funcionando corretamente.
-- Varios erros de mensagens no LCD.
-- Problemas com delay.
-- Erro inicial de tentar realizar a função do jogo dentro da interrupção.
+- Varios erros de mensagens no LCD (dificuldades em usar a função autoscroll, resolvido com o uso de delays e posicionamento correto).
+- Erro inicial de tentar realizar a função do jogo dentro da interrupção, causando diversos erros, principalmente de delay não funcional.
 - Projeto feito com premissa equivocada de perguntas com graús de dificuldade diferente, mas que foi mantido por ajudar a assegurar uma pergunta diferente em cada etapa.
+- Fazer o programa esperar para o input do usuário, resolvido com o uso de contadores dentro de loops while.
